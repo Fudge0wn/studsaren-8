@@ -1,0 +1,35 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+    ports:
+      - "1883:1883"
+
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt
+    restart: unless-stopped
+    depends_on: [mosquitto]
+    volumes:
+      - ./zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+    ports:
+      - "8080:8080" # Z2M web frontend (for pairing)
+    devices:
+      # Use the stable by-id path you found with: ls -l /dev/serial/by-id/
+      - /dev/ttyACM0:/dev/ttyACM0
+
+  dashboard:
+    build: ./dashboard
+    restart: unless-stopped
+    depends_on: [mosquitto]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dashboard/data:/data
+    environment:
+      - MQTT_URL=mqtt://mosquitto:1883
+      - DB_PATH=/data/readings.db
+      - RETENTION_DAYS=90

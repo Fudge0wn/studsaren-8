@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Studsaren 8 — Temps</title>
+  <style>
+    body { margin:0; font-family:system-ui,sans-serif; background:#0f1115; color:#e8e8e8; }
+    .grid { display:grid; gap:16px; padding:16px;
+            grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+    .card { background:#1a1d24; border-radius:16px; padding:20px; cursor:pointer; }
+    .name { font-size:18px; color:#8aa; text-transform:capitalize; }
+    .temp { font-size:56px; font-weight:700; }
+    .sub  { font-size:18px; color:#9aa; }
+    .bat  { font-size:13px; color:#667; margin-top:8px; }
+    #detail { padding:16px; display:none; }
+    #detail h2 { text-transform:capitalize; }
+    polyline { fill:none; stroke:#5cd; stroke-width:2; }
+    .axis { stroke:#333; stroke-width:1; }
+    .close { float:right; color:#9aa; cursor:pointer; font-size:24px; }
+  </style>
+</head>
+<body>
+  <div class="grid" id="grid"></div>
+  <div id="detail">
+    <span class="close" onclick="document.getElementById('detail').style.display='none'">✕</span>
+    <h2 id="detailName"></h2>
+    <div id="chart"></div>
+  </div>
+  <script>
+    const cards = {};
+    function render(r) {
+      let c = cards[r.name];
+      if (!c) {
+        c = document.createElement("div");
+        c.className = "card";
+        c.onclick = () => showHistory(r.name);
+        document.getElementById("grid").appendChild(c);
+        cards[r.name] = c;
+      }
+      c.innerHTML = `
+        <div class="name">${r.name}</div>
+        <div class="temp">${r.temperature ?? "–"}°</div>
+        <div class="sub">${r.humidity ?? "–"}% humidity</div>
+        <div class="bat">🔋 ${r.battery ?? "–"}%</div>`;
+    }
+
+    async function showHistory(name) {
+      const rows = await fetch(`/api/sensors/${name}/history?hours=24`).then(r => r.json());
+      document.getElementById("detailName").textContent = name + " — last 24h";
+      document.getElementById("detail").style.display = "block";
+      drawChart(rows.filter(r => r.temperature != null));
+    }
+
+    function drawChart(rows) {
+      const W = 800, H = 300, pad = 40;
+      const el = document.getElementById("chart");
+      if (rows.length < 2) { el.innerHTML = "<p>Not enough data yet.</p>"; return; }
+      const xs = rows.map(r => r.ts), ys = rows.map(r => r.temperature);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs);
+      const y0 = Math.min(...ys) - 1, y1 = Math.max(...ys) + 1;
+      const px = t => pad + (t - x0) / (x1 - x0) * (W - 2 * pad);
+      const py = v => H - pad - (v - y0) / (y1 - y0) * (H - 2 * pad);
+      const pts = rows.map(r => `${px(r.ts).toFixed(1)},${py(r.temperature).toFixed(1)}`).join(" ");
+      el.innerHTML = `
+        <svg viewBox="0 0 ${W} ${H}" width="100%">
+          <line class="axis" x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}"/>
+          <line class="axis" x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}"/>
+          <text x="${pad}" y="${pad-10}" fill="#9aa" font-size="14">${y1.toFixed(1)}°</text>
+          <text x="${pad}" y="${H-pad+18}" fill="#9aa" font-size="14">${y0.toFixed(1)}°</text>
+          <polyline points="${pts}"/>
+        </svg>`;
+    }
+
+    fetch("/api/state").then(r => r.json()).then(list => list.forEach(render));
+    new EventSource("/events").onmessage = e => render(JSON.parse(e.data));
+  </script>
+</body>
+</html>

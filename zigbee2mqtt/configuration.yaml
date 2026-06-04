@@ -1,0 +1,8 @@
+permit_join: false # toggle ON via the frontend when pairing
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mosquitto:1883
+serial:
+  port: /dev/ttyACM0
+frontend:
+  port: 8080

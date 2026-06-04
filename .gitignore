@@ -1,0 +1,16 @@
+# zigbee2mqtt runtime state (keep configuration.yaml only)
+zigbee2mqtt/database.db
+zigbee2mqtt/state.json
+zigbee2mqtt/coordinator_backup.json
+zigbee2mqtt/log/
+zigbee2mqtt/.storage/
+
+# mosquitto runtime
+mosquitto/data/
+
+# dashboard
+dashboard/node_modules/
+dashboard/data/
+
+# misc
+*.log
