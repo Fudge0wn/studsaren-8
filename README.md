@@ -1,6 +1,6 @@
 # studsaren-8
 
-Home automation app for Studsaren 8.
+Home automation app for Studsaren 8. Currently built for thermometers... :smoking:
 
 A self-hosted dashboard for Aqara T1 Zigbee thermometers, running on a Raspberry
 Pi via Docker Compose and displayed on a wall tablet.
