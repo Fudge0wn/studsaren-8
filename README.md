@@ -1,2 +1,2 @@
 # studsaren-8
-Electron app for home automation
+home automation app for Studsaren 8
